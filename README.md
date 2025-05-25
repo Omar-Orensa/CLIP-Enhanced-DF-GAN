@@ -78,7 +78,7 @@ Our code supports automatic FID evaluation during training, the results are stor
 We synthesize about 3w images from the test descriptions and evaluate the FID between **synthesized images** and **test images** of each dataset.
 
 ```
-cd DF-GAN/code/
+cd CLIP-Enhanced-DF-GAN/code/
 ```
 
 - For bird dataset: `bash scripts/calc_FID.sh ./cfg/bird.yml`
@@ -117,7 +117,7 @@ The released model achieves better performance than the CVPR paper version.
 ## Sampling
 
 ```
-cd DF-GAN/code/
+cd CLIP-Enhanced-DF-GAN/code/
 ```
 
 ### Synthesize images from example captions
