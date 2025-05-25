@@ -33,7 +33,7 @@ Clone this repo.
 ```
 git clone https://github.com/Omar-Orensa/CLIP-Enhanced-DF-GAN.git
 pip install -r requirements.txt
-cd DF-GAN/code/
+cd CLIP-Enhanced-DF-GAN/code/
 ```
 
 ## Preparation
