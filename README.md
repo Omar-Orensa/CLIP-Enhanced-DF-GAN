@@ -4,13 +4,19 @@ This repository is a modified version of [DF-GAN](https://github.com/tobran/DF-G
 
 This fork integrates **CLIP-based loss** into the training process of DF-GAN to improve semantic alignment between text and image.
 
-Developed as part of a bachelor thesis focused on improving text-to-image generation models.
-
 <img src="framework.png" width="804px" height="380px"/>
 
 ---
 
-GALIP significantly lowers the hardware threshold for training and inference. We hope that more users can find the interesting of AIGC.
+## Modifications in This Fork
+
+This repository introduces the following modifications to the original DF-GAN:
+
+- Integration of **CLIP-based loss** into the generator’s objective function.
+- Updated training loop to support CLIP loss.
+- Documentation adjusted to reflect these changes.
+
+These changes were implemented as part of a bachelor thesis project to improve semantic alignment in text-to-image generation.
 
 ---
 
@@ -25,7 +31,7 @@ GALIP significantly lowers the hardware threshold for training and inference. We
 Clone this repo.
 
 ```
-git clone https://github.com/tobran/DF-GAN
+git clone https://github.com/Omar-Orensa/CLIP-Enhanced-DF-GAN.git
 pip install -r requirements.txt
 cd DF-GAN/code/
 ```
@@ -55,7 +61,7 @@ If your training process is interrupted unexpectedly, set **resume_epoch** and *
 
 ### TensorBoard
 
-Our code supports automate FID evaluation during training, the results are stored in TensorBoard files under ./logs. You can change the test interval by changing **test_interval** in the YAML file.
+Our code supports automatic FID evaluation during training, the results are stored in TensorBoard files under ./logs. You can change the test interval by changing **test_interval** in the YAML file.
 
 - For bird dataset: `tensorboard --logdir=./code/logs/bird/train --port 8166`
 - For coco dataset: `tensorboard --logdir=./code/logs/coco/train --port 8177`
@@ -84,7 +90,22 @@ cd DF-GAN/code/
 - Our evaluation codes do not save the synthesized images (about 3w images). If you want to save them, set **save_image: True** in the YAML file.
 - Since we find that the IS can be overfitted heavily through Inception-V3 jointed training, we do not recommend the IS metric for text-to-image synthesis.
 
-### Performance
+## 📈 Evaluation Summary
+
+We evaluate our CLIP-enhanced DF-GAN model using both **FID** (Fréchet Inception Distance) and **CLIP Score** to assess image quality and semantic alignment. Experiments were conducted on the CUB dataset.
+
+| Dataset | Metric       | Original DF-GAN | Best Score (CLIP-enhanced) | Epoch | λ<sub>CLIP</sub> |
+| ------- | ------------ | --------------- | -------------------------- | ----- | ---------------- |
+| **CUB** | FID ↓        | 12.23           | **12.71**                  | 1355  | 0.01             |
+|         | CLIP Score ↑ | 28.54           | **29.11**                  | 1350  | 0.01             |
+
+> **Notes:**
+>
+> - Lower FID indicates better visual fidelity.
+> - Higher CLIP score indicates stronger semantic alignment between text and image.
+> - The CLIP Score is reported on a **logit scale** (i.e., raw cosine similarity logits from the CLIP model), which is why values typically fall in the 18–30 range.
+
+### Original DF-GAN Benchmark Results
 
 The released model achieves better performance than the CVPR paper version.
 
@@ -116,9 +137,7 @@ The synthesized images are saved at ./code/samples.
 
 ---
 
-### Citing DF-GAN
-
-If you find DF-GAN useful in your research, please consider citing our paper:
+### Citing DF-GAN and CLIP
 
 ```
 @inproceedings{tao2022df,
@@ -127,6 +146,15 @@ If you find DF-GAN useful in your research, please consider citing our paper:
   booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
   pages={16515--16525},
   year={2022}
+}
+```
+
+```
+@article{radford2021learning,
+  title={Learning Transferable Visual Models From Natural Language Supervision},
+  author={Radford, Alec and Kim, Jong Wook and Hallacy, Chris and others},
+  journal={ICML},
+  year={2021}
 }
 ```
 
