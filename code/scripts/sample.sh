@@ -2,7 +2,7 @@
 cfg=$1
 
 # model settings
-imgs_per_sent=16
+imgs_per_sent=1
 cuda=True
 gpu_id=0
 

@@ -12,7 +12,7 @@ cuda: True
 
 stamp: 'normal'
 state_epoch: 0
-max_epoch: 1301
+max_epoch: 1366
 batch_size: 32
 nf: 32
 ch_size: 3
@@ -20,8 +20,8 @@ ch_size: 3
 model: base
 
 gen_interval: 1
-test_interval: 10
-save_interval: 10
+test_interval: 5
+save_interval: 5
 
 truncation: True
 trunc_rate: 0.88
@@ -30,7 +30,7 @@ sample_times: 10
 npz_path: ../data/birds/npz/bird_val256_FIDK0.npz
 example_captions: ./example_captions/bird.txt
 samples_save_dir: ./samples/bird/
-checkpoint: ./saved_models/bird/pretrained/state_epoch_1220.pth
+checkpoint: /content/drive/MyDrive/DF-GAN/code/saved_models/bird/base_normal_bird_256_2025_03_30_17_44_43/state_epoch_1390.pth
 
 save_image: False
 val_save_dir: ./vals/bird/

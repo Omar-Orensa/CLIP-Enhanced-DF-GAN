@@ -12,7 +12,7 @@ cuda: True
 
 stamp: 'normal'
 state_epoch: 0
-max_epoch: 301
+max_epoch: 321
 batch_size: 32
 nf: 32
 ch_size: 3
@@ -30,7 +30,7 @@ sample_times: 1
 npz_path: ../data/coco/npz/coco_val256_FIDK0.npz
 example_captions: ./example_captions/coco.txt
 samples_save_dir: ./samples/coco/
-checkpoint: ./saved_models/coco/pretrained/state_epoch_290.pth
+checkpoint: /content/drive/MyDrive/DF-GAN/code/saved_models/coco/base_normal_coco_256_2025_04_14_17_06_53/state_epoch_300.pth
 
 save_image: False
 val_save_dir: ./vals/coco/

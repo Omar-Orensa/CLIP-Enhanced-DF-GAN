@@ -24,7 +24,7 @@ from .utils import truncated_noise
 
 def get_one_batch_data(dataloader, text_encoder, args):
     data = next(iter(dataloader))
-    imgs, sent_emb, words_embs, keys = prepare_data(data, text_encoder)
+    imgs, sent_emb, words_embs, keys, caption_text  = prepare_data(data, text_encoder)
     return imgs, words_embs, sent_emb
 
 
@@ -42,13 +42,13 @@ def get_fix_data(train_dl, test_dl, text_encoder, args):
 
 
 def prepare_data(data, text_encoder):
-    imgs, captions, caption_lens, keys = data
+    imgs, captions, caption_lens, keys, caption_text  = data
     captions, sorted_cap_lens, sorted_cap_idxs = sort_sents(captions, caption_lens)
     sent_emb, words_embs = encode_tokens(text_encoder, captions, sorted_cap_lens)
     sent_emb = rm_sort(sent_emb, sorted_cap_idxs)
     words_embs = rm_sort(words_embs, sorted_cap_idxs)
     imgs = Variable(imgs).cuda()
-    return imgs, sent_emb, words_embs, keys
+    return imgs, sent_emb, words_embs, keys, caption_text 
 
 
 def sort_sents(captions, caption_lens):
@@ -327,7 +327,12 @@ class TextImgDataset(data.Dataset):
         sent_ix = random.randint(0, self.embeddings_num)
         new_sent_ix = index * self.embeddings_num + sent_ix
         caps, cap_len = self.get_caption(new_sent_ix)
-        return imgs, caps, cap_len, key
+
+        # Get the raw text version of the selected caption
+        tokens = self.captions[new_sent_ix]
+        caption_text = ' '.join([self.ixtoword[ix] for ix in tokens])
+
+        return imgs, caps, cap_len, key, caption_text
 
     def __len__(self):
         return len(self.filenames)

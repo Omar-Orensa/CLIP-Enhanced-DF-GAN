@@ -144,6 +144,7 @@ def save_models(netG, netD, netC, optG, optD, epoch, multi_gpus, save_path):
         state = {'model': {'netG': netG.state_dict(), 'netD': netD.state_dict(), 'netC': netC.state_dict()}, \
                 'optimizers': {'optimizer_G': optG.state_dict(), 'optimizer_D': optD.state_dict()},\
                 'epoch': epoch}
+        print(f"✅ Saving model to: {save_path}")
         torch.save(state, '%s/state_epoch_%03d.pth' % (save_path, epoch))
 
 

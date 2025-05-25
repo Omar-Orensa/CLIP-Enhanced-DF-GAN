@@ -161,4 +161,3 @@ if __name__ == "__main__":
     else:
         args.device = torch.device('cpu')
     main(args)
-

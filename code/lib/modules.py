@@ -28,6 +28,10 @@ from models.inception import InceptionV3
 from torch.nn.functional import adaptive_avg_pool2d
 import torch.distributed as dist
 
+import clip
+from torchvision.transforms import Compose, Resize, ToTensor, Normalize
+from torchvision.transforms.functional import to_pil_image
+
 
 ############   modules   ############
 def train(dataloader, netG, netD, netC, text_encoder, optimizerG, optimizerD, args):
@@ -37,13 +41,24 @@ def train(dataloader, netG, netD, netC, text_encoder, optimizerG, optimizerD, ar
     max_epoch = args.max_epoch
     z_dim = args.z_dim
     netG, netD, netC = netG.train(), netD.train(), netC.train()
+
+    clip_model, clip_preprocess = clip.load("ViT-B/32", device=args.device)
+    clip_model.eval()
+    clip_transform = Compose([
+        Resize((224, 224)),
+        ToTensor(),
+        Normalize((0.48145466, 0.4578275, 0.40821073),  # CLIP's image normalization
+                  (0.26862954, 0.26130258, 0.27577711))
+])
+
+
     if (args.multi_gpus==True) and (get_rank() != 0):
         None
     else:
         loop = tqdm(total=len(dataloader))
     for step, data in enumerate(dataloader, 0):
         # prepare_data
-        imgs, sent_emb, words_embs, keys = prepare_data(data, text_encoder)
+        imgs, sent_emb, words_embs, keys, caption_text = prepare_data(data, text_encoder)
         imgs = imgs.to(device).requires_grad_()
         sent_emb = sent_emb.to(device).requires_grad_()
         words_embs = words_embs.to(device).requires_grad_()
@@ -55,6 +70,25 @@ def train(dataloader, netG, netD, netC, text_encoder, optimizerG, optimizerD, ar
         # synthesize fake images
         noise = torch.randn(batch_size, z_dim).to(device)
         fake = netG(noise, sent_emb)
+
+        # CLIP Loss integration
+        # Use one caption per image (modified prepare_data to return caption_texts)
+        caption_texts = list(caption_text)  # batch of strings
+
+        # Prepare text and image for CLIP
+        with torch.no_grad():
+          text_tokens = clip.tokenize(caption_texts).to(device)
+          image_input = torch.stack([
+              clip_transform(to_pil_image(img)) for img in fake.detach().cpu()
+          ]).to(device)
+          # Encode both
+          text_features = clip_model.encode_text(text_tokens)
+          image_features = clip_model.encode_image(image_input)
+
+        # Compute cosine similarity loss
+        clip_loss = 1 - torch.cosine_similarity(image_features, text_features).mean()
+        lambda_clip = 0.01
+
         fake_features = netD(fake.detach())
         _, errD_fake = predict_loss(netC, fake_features, sent_emb, negtive=True)
         # MA-GP
@@ -69,7 +103,7 @@ def train(dataloader, netG, netD, netC, text_encoder, optimizerG, optimizerD, ar
         fake_features = netD(fake)
         output = netC(fake_features, sent_emb)
         # sim = MAP(image_encoder, fake, sent_emb).mean()
-        errG = -output.mean()# - sim
+        errG = -output.mean() + lambda_clip * clip_loss
         optimizerG.zero_grad()
         errG.backward()
         optimizerG.step()
@@ -91,7 +125,7 @@ def sample(dataloader, netG, text_encoder, save_dir, device, multi_gpus, z_dim, 
         ######################################################
         # (1) Prepare_data
         ######################################################
-        imgs, sent_emb, words_embs, keys = prepare_data(data, text_encoder)
+        imgs, sent_emb, words_embs, keys, caption_text = prepare_data(data, text_encoder)
         sent_emb = sent_emb.to(device)
         ######################################################
         # (2) Generate fake images
@@ -163,7 +197,7 @@ def calculate_fid(dataloader, text_encoder, netG, device, m1, s1, epoch, max_epo
             ######################################################
             # (1) Prepare_data
             ######################################################
-            imgs, sent_emb, words_embs, keys = prepare_data(data, text_encoder)
+            imgs, sent_emb, words_embs, keys, caption_text = prepare_data(data, text_encoder)
             sent_emb = sent_emb.to(device)
             ######################################################
             # (2) Generate fake images
@@ -233,7 +267,7 @@ def eval(dataloader, text_encoder, netG, device, m1, s1, save_imgs, save_dir,
             ######################################################
             # (1) Prepare_data
             ######################################################
-            imgs, sent_emb, words_embs, keys = prepare_data(data, text_encoder)
+            imgs, sent_emb, words_embs, keys, caption_text = prepare_data(data, text_encoder)
             sent_emb = sent_emb.to(device)
             ######################################################
             # (2) Generate fake images
@@ -334,11 +368,11 @@ def sample_one_batch(noise, sent, netG, multi_gpus, epoch, img_save_dir, writer)
         None
     else:
         if writer!=None:
-            fixed_grid = make_grid(fixed_results.cpu(), nrow=8, range=(-1, 1), normalize=True)
+            fixed_grid = make_grid(fixed_results.cpu(), nrow=8, value_range=(-1, 1), normalize=True)
             writer.add_image('fixed results', fixed_grid, epoch)
         img_name = 'samples_epoch_%03d.png'%(epoch)
         img_save_path = osp.join(img_save_dir, img_name)
-        vutils.save_image(fixed_results.data, img_save_path, nrow=8, range=(-1, 1), normalize=True)
+        vutils.save_image(fixed_results.data, img_save_path, nrow=8, value_range=(-1, 1), normalize=True)
 
 
 def generate_samples(noise, caption, model):
